@@ -16,14 +16,14 @@ export const userController=async(req,res)=>{
    const coverImageLocalpath=req.files?.coverImage[0]?.path;
 
    if(!avatarlocalPath){
-          return res.status(400).json({message:"Avatar Image Is Required"});
+           res.status(400).json({message:"Avatar Image Is Required"});
    }
 
    const avatar=await uploadfilecloudinary(avatarlocalPath);
    const coverImage=await uploadfilecloudinary(coverImageLocalpath);
 
    if(!avatar){
-          return res.status(400).json({message:"Avatar Is Required"});
+           res.status(400).json({message:"Avatar Is Required"});
    }
 
    const user=User.create({
@@ -38,8 +38,9 @@ export const userController=async(req,res)=>{
    const createdUser=await User.findById(user._id).select("-password -refreshToken")
 
    if(createdUser){
-          return res.status(201).json(new apiResopnes(200,createdUser,"User Register Succesfully"));
+       //     res.status(201).json(new apiResopnes(200,createdUser,"User Register Succesfully"));
+              res.status(200).json({message:"User Register Succesfully",data:createdUser});
        }
-       return res.status(500).json({message:"Something Went To Wrong"});
+        res.status(500).json({message:"Something Went To Wrong"});
 
 }
