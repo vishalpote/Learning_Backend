@@ -7,7 +7,7 @@ export const userController=async(req,res)=>{
         res.status(409).json({message:"Please Enter All The Fileds"});
    }
 
-   const existed=User.findOne({$or:[{username},{email}]})
+   const existed=await User.findOne({$or:[{username},{email}]})
    if(existed){
         res.status(400).json({message:"Username And Email Already Exist.."});
    }
@@ -37,9 +37,9 @@ export const userController=async(req,res)=>{
 
    const createdUser=await User.findById(user._id).select("-password -refreshToken")
 
-   if(!createdUser){
-          return res.status(500).json({message:"SOmething Went To Wrong"});
-   }
+   if(createdUser){
+          return res.status(201).json(new apiResopnes(200,createdUser,"User Register Succesfully"));
+       }
+       return res.status(500).json({message:"Something Went To Wrong"});
 
-    return res.status(201).json(new apiResopnes(200,createdUser,"User Register Succesfully"));
 }
