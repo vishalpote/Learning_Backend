@@ -1,14 +1,45 @@
 import User from "../models/user.model.js"
-
+import { uploadfilecloudinary } from "../utils/cloudinary.js";
 
 export const userController=async(req,res)=>{
    const {username,email,fullname,password}=req.body;
    if(!username || !email || !fullname || !password){
-        res.status(404).json({message:"Please Enter All The Fileds"});
+        res.status(409).json({message:"Please Enter All The Fileds"});
    }
 
    const existed=User.findOne({$or:[{username},{email}]})
    if(existed){
-        res.status(409).json({message:"Username And Email Already Exist.."});
+        res.status(400).json({message:"Username And Email Already Exist.."});
    }
+
+   const avatarlocalPath=req.files?.avatar[0]?.path;
+   const coverImageLocalpath=req.files?.coverImage[0]?.path;
+
+   if(!avatarlocalPath){
+          return res.status(400).json({message:"Avatar Image Is Required"});
+   }
+
+   const avatar=await uploadfilecloudinary(avatarlocalPath);
+   const coverImage=await uploadfilecloudinary(coverImageLocalpath);
+
+   if(!avatar){
+          return res.status(400).json({message:"Avatar Is Required"});
+   }
+
+   const user=User.create({
+     username:username.toLowerCase(),
+     email,
+     password,
+     avatar:avatar.url,
+     coverImage:coverImage?.url || "",
+     fullname
+   })
+
+   const createdUser=await User.findById(user._id).select("-password -refreshToken")
+
+   if(!createdUser){
+          return res.status(500).json({message:"SOmething Went To Wrong"});
+   }
+
+    return res.status(201).json(new apiResopnes(200,createdUser,"User Register Succesfully"));
 }
