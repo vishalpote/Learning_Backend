@@ -72,7 +72,7 @@ export const loginController=async(req,res)=>{
 
         const {username,email,password}=req.body;
 
-        if(!username || !email){
+        if(!username && !email){
                 return res.status(400).json({message:"Username Or Email Is Required..!!"});
         }
 
@@ -109,5 +109,25 @@ export const loginController=async(req,res)=>{
 
 
 export const logoutController=async(req,res)=>{
-        
+        await User.findByIdAndUpdate(
+                req.user._id,
+                {
+                        $set:{
+                                refreshToken:undefined
+                        }
+                },{
+                        new:true
+                }
+        )
+
+        const options={
+                httpOnly:true,
+                secure:true
+        }
+
+        return res
+        .status(200)
+        .clearCookie("accessToken",options)
+        .clearCookie("refreshToken",options)
+        .json({message:"User Logged Out successfully..."})
 }
