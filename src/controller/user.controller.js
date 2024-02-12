@@ -362,10 +362,28 @@ export const getWatchHistory=async(req, res)=>{
                                                         localField:"owner",
                                                         foreignField:"_id",
                                                         as:"owner",
+                                                        pipeline:[
+                                                                {
+                                                                        $project:{
+                                                                                fullname:1,
+                                                                                username:1,
+                                                                                avatar:1
+                                                                        }
+                                                                }
+                                                        ]
+                                                }
+                                        },
+                                        {
+                                                $addFields:{
+                                                        owner:{
+                                                                $first:"$owner"
+                                                        }
                                                 }
                                         }
                                 ]
                         }
                 }
-        ])
+        ]);
+
+        return res.status(200).json({message:"Watch History Fetch Successfully..",data:user[0].watchHistory })
 }
