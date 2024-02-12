@@ -84,9 +84,13 @@ export const loginController=async(req,res)=>{
                 return res.status(404).json({message :"User Not Found In Database"});
         }
 
-        const passwordvalid=await user.checkPassword(password);
-        if(!passwordvalid){
-                return res.status(401).json({message :"Password Does Not Match..!!"});
+        try {
+                const passwordvalid=await user.checkPassword(password);
+                if(!passwordvalid){
+                        return res.status(401).json({message :"Password Does Not Match..!!"});
+                }
+        } catch (error) {
+               return res.status(500).json({message :"Internal Server Error"});
         }
 
         const {accessToken,refreshToken}=await generateaccessandrefreshtoken(user._id);
@@ -101,7 +105,7 @@ export const loginController=async(req,res)=>{
         return  res.status(200)
         .cookie("accessToken",accessToken,options)
         .cookie("refreshToken",refreshToken,options)
-        .json({message:"User Logged In Successfully.."},{user:LoggedUser,accessToken,refreshToken})
+        .json({message:"User Logged In Successfully..",user:LoggedUser,accessToken,refreshToken})
 
 
 
