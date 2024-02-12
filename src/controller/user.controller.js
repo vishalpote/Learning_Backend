@@ -1,8 +1,9 @@
 import User from "../models/user.model.js"
 import { uploadfilecloudinary } from "../utils/cloudinary.js";
 import jwt from 'jsonwebtoken';
-import options from '../utils/options.js'
+import {options} from '../utils/options.js'
 import dotenv from 'dotenv';
+import { upload } from "../middleware/multer.middleware.js";
 
 
 dotenv.config();
@@ -171,4 +172,103 @@ export const refreshAccessToken=async(req,res)=>{
        } catch (error) {
                 return res.status(500).json({message:"Internal Server Error",error});
        }
+}
+
+export const changecurrentPassword=async (req, res) => {
+
+        const {oldPassword,newPassword}=req.body;
+        const user=await User.findById(req.user._id)
+        const ispasswordcorrect=await user.checkPassword(oldPassword);
+
+        if(!ispasswordcorrect){
+                return res.status(401).json({message:"Password Does Not Match..!!"});
+        }
+
+        user.password=newPassword;
+        await user.save({validateBeforeSave:false}); 
+
+        return res.status(200).json({message:"password Change Succesfully..!!"});
+}
+
+
+export const getCurrentUser=async(req,res)=>{
+        return res
+        .status(200)
+        .json({message:"Current User Data Fetched Successfully...",data:req.user})
+}
+
+export const updateAccountDetails=async(req,res)=>{
+        const { fullname,email }=req.body;
+
+        if(!fullname || !email ){
+                return res.status(400).json({message:"All Fields Are Required.."});
+        }
+
+        const user=await User.findByIdAndUpdate(
+                req.user._id,
+                {$set:{
+                        fullname:fullname,
+                        email:email
+                }},
+                {new:true}
+        ).select("-password");
+        return res
+        .status(200)
+        .json({message:"Account Updated Successfully..",data:user})
+}
+
+export const updateUserAvatar=async(req,res)=>{
+        const avatarLocalPath=req.file?.path;
+
+        if(!avatarLocalPath){
+                return res.status(400).json({message:"Avatar File Is Missing.."});
+        }
+
+        const avatar=uploadfilecloudinary(avatarLocalPath);
+
+        if(!avatar.url){
+                return res.status(400).json({message:"Error While Uploading Avatar File.."});
+        }
+
+        const user=await User.findByIdAndUpdate(
+                req.user._id,
+                {
+                        $set:{
+                                avatar: avatar.url
+                        }
+                },
+                {
+                   new: true,
+                }
+        ).select("-password")
+
+        return res.status(200).json({message:"Avatar Updated Successfully..",data:user})
+
+}
+
+export const updateUsercoverImage=async(req,res)=>{
+        const coverImageLocalpath=req.file?.path;
+
+        if(!coverImageLocalpath){
+                return res.status(400).json({message:"CoverImage Is Missing.."});
+        }
+
+        const coverImage=uploadfilecloudinary(coverImageLocalpath);
+
+        if(!coverImage.url){
+                return res.status(400).json({message:"Error While CoverImage Uploaded.."});
+        }
+
+        const user=await User.findByIdAndUpdate(
+                req.user._id,
+                {
+                        $set:{
+                                coverImage: coverImage.url
+                        }
+                },
+                {
+                        new:true
+                }
+        )
+        return res.status(200).json({message:"CoverImage Updated Successfully..",data:user})
 }
