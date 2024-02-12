@@ -1,7 +1,11 @@
 import User from "../models/user.model.js"
 import { uploadfilecloudinary } from "../utils/cloudinary.js";
+import jwt from 'jsonwebtoken';
+import options from '../utils/options.js'
+import dotenv from 'dotenv';
 
 
+dotenv.config();
 const generateaccessandrefreshtoken=async(userId)=>{
         try {
                 const user=await User.findById(userId);
@@ -134,4 +138,37 @@ export const logoutController=async(req,res)=>{
         .clearCookie("accessToken",options)
         .clearCookie("refreshToken",options)
         .json({message:"User Logged Out successfully..."})
+}
+
+
+export const refreshAccessToken=async(req,res)=>{
+
+        const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken
+
+        if(!incomingRefreshToken){
+                return res.status(401).json({message:"Unauthorized Request...!! "})
+        }
+
+       try {
+         const decodeToken=jwt.verify(incomingRefreshToken,process.env.vishalbhausahebpote90904545);
+ 
+         const user=User.findById(decodeToken?._id)
+         if(!user){
+                 return res.status(401).json({message:"Invalid RefreshToken..."});
+         }
+ 
+         if(incomingRefreshToken !== user.refreshToken){
+                 return res.status(401).json({message:"RefreshToken Expired Or Used!!"});
+         }
+ 
+         const {accessToken,newRefreshToken} = await generateaccessandrefreshtoken(user._id);
+ 
+         return res
+         .status(200)
+         .cookie("accessToken",accessToken,options)
+         .cookie("refreshToken",newRefreshToken,options)
+         .json({message:"Token Refreshed...",accessToken,refreshToken:newRefreshToken})
+       } catch (error) {
+                return res.status(500).json({message:"Internal Server Error",error});
+       }
 }
